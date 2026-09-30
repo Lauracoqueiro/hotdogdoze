@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Hot Dog do Zé — Sistema Integrado de Atendimento & KDS</title>
+  
+  <!-- SEO & Open Graph Meta Tags -->
+  <meta name="description" content="Sistema Integrado Hot Dog do Zé: Gestão de Pedidos PDV (UC01), Painel KDS Cozinha (UC02) e Finalização Balcão (UC03).">
+  <meta property="og:title" content="Hot Dog do Zé — Sistema Integrado de Pedidos & Cozinha">
+  <meta property="og:description" content="Sabor artesanal com tecnologia: atendimento balcão, controle de mesas, cozinha KDS e histórico de pedidos.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=1200&q=80">
+  <meta property="og:type" content="website">
+
+  <!-- Schema.org JSON-LD para Negócio Local / Restaurante -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FastFoodRestaurant",
+    "name": "Hot Dog do Zé",
+    "image": "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=1200&q=80",
+    "telephone": "+55-62-99486-6465",
+    "servesCuisine": "Hot Dog Gourmet, Lanches Artesanais",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Praça Central, Centro",
+      "addressLocality": "Goiânia",
+      "addressRegion": "GO",
+      "addressCountry": "BR"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        "opens": "18:00",
+        "closes": "23:30"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google Fonts Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Main Design System Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       TOP SYSTEM BAR — SIMULADOR DE AUTENTICAÇÃO E PAPÉIS (Diagrama de Classes: Funcionario)
+       ========================================================================== -->
+  <aside class="auth-bar" aria-label="Barra de Controle de Acesso e Permissões">
+    <div class="container auth-bar__inner">
+      <div class="auth-bar__user-info">
+        <span class="auth-badge" id="currentRoleBadge">👤 Atendente</span>
+        <span class="auth-name" id="currentUserName">Maria Santos (Login: maria.atendente)</span>
+      </div>
+
+      <div class="auth-bar__controls">
+        <!-- Alternador de Perfil para testes e simulação (Cliente, Atendente, Cozinha, Gerente) -->
+        <label for="selectUserRole" class="auth-label">Simular Perfil:</label>
+        <select id="selectUserRole" class="auth-select" aria-label="Selecionar Perfil do Protótipo">
+          <option value="cliente">Lucas Silva — 🛒 Cliente (Cardápio & Pedidos)</option>
+          <option value="atendente" selected>Maria Santos — 📝 Atendente (PDV & Balcão)</option>
+          <option value="cozinha">Chef Zé — 🍳 Chefe de Cozinha (KDS)</option>
+          <option value="gerente">Carlos Gerente — 👑 Gerente Geral (Acesso Total)</option>
+        </select>
+
+        <!-- Indicador de Notificação da Cozinha para o Atendente -->
+        <div class="notif-wrapper" id="notifWrapper" title="Avisos do Sistema">
+          <button class="notif-btn" id="notifBtn" aria-label="Notificações de Pedidos Prontos">
+            <span>🔔</span>
+            <span class="notif-badge" id="notifBadge">0</span>
+          </button>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Alternar Tema Claro/Escuro" title="Alternar Tema">
+          <span class="icon-moon">🌙</span>
+          <span class="icon-sun">☀️</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       SITE HEADER & SYSTEM MODULE NAVIGATION
+       ========================================================================== -->
+  <header class="site-header" id="siteHeader">
+    <div class="container site-header__inner">
+      
+      <!-- Brand Logo -->
+      <a href="#" class="logo" id="brandLogo" aria-label="Hot Dog do Zé Home">
+        <span class="logo__icon">🌭</span>
+        <span class="logo__text">Hot Dog do Zé <small class="logo__sub">Sistema Integrado</small></span>
+      </a>
+
+      <!-- Navegação dos Módulos dos Casos de Uso -->
+      <nav class="site-nav" id="siteNav" aria-label="Navegação dos Módulos do Sistema">
+        <ul class="nav__list">
+          <li>
+            <button class="module-tab module-tab--active" data-view="view-cardapio" id="tabCardapio">
+              🌐 Vitrine & Cardápio
+            </button>
+          </li>
+          <li>
+            <button class="module-tab" data-view="view-pdv" id="tabPdv">
+              📝 Novo Pedido (UC01)
+            </button>
+          </li>
+          <li>
+            <button class="module-tab" data-view="view-cozinha" id="tabCozinha">
+              🍳 Cozinha / KDS (UC02)
+              <span class="tab-count" id="kdsActiveCount">0</span>
+            </button>
+          </li>
+          <li>
+            <button class="module-tab" data-view="view-pedidos" id="tabPedidos">
+              📦 Balcão & Caixa (UC03)
+              <span class="tab-count tab-count--ready" id="readyActiveCount">0</span>
+            </button>
+          </li>
+          <li>
+            <button class="module-tab" data-view="view-gerente" id="tabGerente">
+              📊 Painel Gerencial (RF08)
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Carrinho do Cliente (Visão Vitrine) -->
+      <div class="header__actions">
+        <button class="cart-trigger" id="cartTrigger" aria-label="Abrir Carrinho de Pedidos">
+          <span>🛒 Carrinho</span>
+          <span class="cart-count" id="cartCount">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       ÁREA PRINCIPAL DE MÓDULOS (VIEWS DINÂMICAS)
+       ========================================================================== -->
+  <main class="main-content">
+
+    <!-- ========================================================================
+         VIEW 1: VITRINE & CARDÁPIO (LANDING PAGE ORIGINAL MELHORADA)
+         ======================================================================== -->
+    <section class="module-view module-view--active" id="view-cardapio" aria-label="Vitrine e Cardápio">
+      <!-- Hero Section -->
+      <div class="hero">
+        <div class="container hero__grid">
+          <div class="hero__content">
+            <div class="eyebrow">
+              <span>✨ O Hot Dog Gourmet #1 de Goiânia</span>
+            </div>
+            <h1>Sabor Artesanal de Rua <span>Elevado à Perfeição</span>.</h1>
+            <p class="hero__subtitle">
+              Pão brioche fofinho selado na manteiga de garrafa, salsicha selecionada 100% bovina e molhos de receita secreta. O verdadeiro lanche de rua com acabamento de alta gastronomia.
+            </p>
+            <div class="hero__actions">
+              <button class="btn btn--primary" id="btnGoToPdv">
+                <span>📝 Abrir PDV / Registrar Pedido (UC01)</span>
+              </button>
+              <button class="btn btn--secondary" id="heroCartBtn">
+                <span>🛒 Ver Carrinho Online</span>
+              </button>
+            </div>
+            <div class="hero__trust">
+              <div class="trust__rating">
+                <span class="trust__stars">★★★★★</span>
+                <span class="trust__text"><strong>4.9 / 5.0</strong> no iFood & Google</span>
+              </div>
+              <div class="divider-v"></div>
+              <div class="trust__text">
+                🚀 <strong>25 min</strong> tempo médio de entrega
+              </div>
+            </div>
+          </div>
+
+          <div class="hero__media">
+            <div class="hero__image-wrapper">
+              <img src="https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=1000&q=80" 
+                   alt="Hot Dog Gourmet Suculento Hot Dog do Zé" 
+                   class="hero__image"
+                   width="800" 
+                   height="600">
+            </div>
+            <div class="hero__float-card hero__float-card--1">
+              <div class="float-card__icon">🧀</div>
+              <div class="float-card__text">
+                <strong>Vulcão de Cheddar</strong>
+                <span>Maçaricado na hora</span>
+              </div>
+            </div>
+            <div class="hero__float-card hero__float-card--2">
+              <div class="float-card__icon">🥓</div>
+              <div class="float-card__text">
+                <strong>Bacon Artesanal</strong>
+                <span>Extra crocante</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cardápio Interativo com Filtros -->
+      <div class="section" id="cardapio">
+        <div class="container">
+          <div class="section__header">
+            <div class="eyebrow">Cardápio em Tempo Real</div>
+            <h2>Nossos Produtos & Disponibilidade</h2>
+            <p>Os itens abaixo refletem diretamente a disponibilidade em estoque da cozinha.</p>
+          </div>
+
+          <div class="search-bar-wrapper" style="max-width: 480px; margin: 0 auto 24px;">
+            <input type="text" id="inputSearchMenu" class="input-control" placeholder="🔍 Pesquisar produtos por nome, categoria ou ingrediente (RF09)...">
+          </div>
+
+          <div class="menu-filters">
+            <button class="filter-btn filter-btn--active" data-filter="todos">Todos os Itens</button>
+            <button class="filter-btn" data-filter="favoritos">Mais Pedidos ⭐</button>
+            <button class="filter-btn" data-filter="gourmet">Gourmet Especial ✨</button>
+            <button class="filter-btn" data-filter="combos">Combos da Galera 🍔</button>
+            <button class="filter-btn" data-filter="acompanhamentos">Porções & Bebidas 🍟</button>
+          </div>
+
+          <div class="menu-grid" id="menuGrid">
+            <!-- Renderizado dinamicamente via JS com dados da classe Produto -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 2: MÓDULO PDV / REGISTRAR PEDIDO (UC01)
+         Ator: Atendente Autenticado (Precondição UC01)
+         Regras: RN01-RN09, RNF07 (Prevenção de duplicidade)
+         ======================================================================== -->
+    <section class="module-view" id="view-pdv" aria-label="Registrar Pedido PDV">
+      <div class="container">
+        
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">UC01 — Registrar Pedido</div>
+            <h2>Terminal de Atendimento & Balcão</h2>
+            <p>Selecione a modalidade de atendimento, adicione os produtos com validação de estoque e envie à cozinha.</p>
+          </div>
+          <div class="view-header__badge">
+            <span class="status-indicator status-indicator--online"></span>
+            <span>Sistema Conectado ao Estoque</span>
+          </div>
+        </div>
+
+        <div class="pdv-layout">
+          <!-- Coluna Esquerda: Configuração do Atendimento & Catálogo -->
+          <div class="pdv-catalog-col">
+            
+            <!-- Etapa 1: Atendente seleciona balcão ou mesa (UC01) -->
+            <div class="card pdv-box">
+              <h3 class="card-title">1. Modalidade de Atendimento</h3>
+              <div class="form-row">
+                <div class="radio-group" role="radiogroup" aria-label="Tipo de Atendimento">
+                  <label class="radio-card">
+                    <input type="radio" name="tipoAtendimento" value="Balcão" checked id="tipoBalcao">
+                    <span class="radio-card__label">
+                      <strong>🚶 Balcão / Retirada</strong>
+                      <small>Pedido rápido sem vínculo de mesa</small>
+                    </span>
+                  </label>
+                  <label class="radio-card">
+                    <input type="radio" name="tipoAtendimento" value="Mesa" id="tipoMesa">
+                    <span class="radio-card__label">
+                      <strong>🍽️ Mesa Presencial</strong>
+                      <small>Identificar comanda e mesa cadastrada</small>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Campos condicionais para Mesa (UC01: Mesa cadastrada e comanda) -->
+              <div class="mesa-fields-container" id="mesaFieldsContainer" style="display: none;">
+                <div class="form-grid">
+                  <div class="form-field">
+                    <label for="selectMesa">Mesa Cadastrada * (RN01)</label>
+                    <select id="selectMesa" name="IdMesa" class="input-control">
+                      <option value="">Selecione uma mesa...</option>
+                      <!-- Preenchido via JS com Mesas 1 a 12 -->
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="inputComanda">Identificação da Comanda *</label>
+                    <input type="text" id="inputComanda" name="Comanda" class="input-control" placeholder="Ex: Comanda #104 / Nome do Cliente">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Etapa 2: Seleção de Produtos e Adicionais (UC01) -->
+            <div class="card pdv-box">
+              <div class="card-header-flex">
+                <h3 class="card-title">2. Selecionar Produtos do Cardápio</h3>
+                <span class="text-muted" style="font-size: 0.85rem;">Validação automática de estoque (RN06-RN09)</span>
+              </div>
+
+              <div style="margin-top: 10px; margin-bottom: 12px;">
+                <input type="text" id="inputSearchPdv" class="input-control input-control--sm" placeholder="🔍 Filtrar produtos por nome ou categoria (RF09)...">
+              </div>
+
+              <div class="pdv-products-grid" id="pdvProductsGrid">
+                <!-- Cards de seleção rápida de produtos renderizados via JS -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Coluna Direita: Item Atual sendo Montado + Resumo da Comanda -->
+          <div class="pdv-order-col">
+            
+            <!-- Box de Customização do Item Atualmente Selecionado -->
+            <div class="card pdv-box" id="pdvItemCustomizerBox">
+              <h3 class="card-title">Configurar Item Selecionado</h3>
+              <div id="pdvSelectedItemNotice" class="empty-selection-notice">
+                <span>👈 Clique em um produto ao lado para personalizar adicionais, retirar ingredientes e ajustar quantidade.</span>
+              </div>
+
+              <div id="pdvActiveCustomizer" style="display: none;">
+                <div class="customizer-header">
+                  <h4 id="pdvCustomProductTitle">Nome do Produto</h4>
+                  <span class="customizer-price" id="pdvCustomProductBasePrice">R$ 0,00</span>
+                </div>
+
+                <!-- Escolha do Pão -->
+                <div class="form-field" style="margin-top: 12px;">
+                  <label class="form-label-sm">Tipo de Pão:</label>
+                  <div class="option-pills" id="pdvBreadOptions">
+                    <label class="pill-option">
+                      <input type="radio" name="pdvBread" value="Pão Brioche Selado" checked>
+                      <span>Brioche Selado</span>
+                    </label>
+                    <label class="pill-option">
+                      <input type="radio" name="pdvBread" value="Pão Tradicional">
+                      <span>Pão Tradicional</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Ingredientes a Retirar (DER: IngredientesRemovidos) -->
+                <div class="form-field" style="margin-top: 12px;">
+                  <label class="form-label-sm">Ingredientes Padrão (Desmarque para retirar):</label>
+                  <div class="checkbox-tags" id="pdvIngredientsRemovalContainer">
+                    <!-- Checkboxes de ingredientes -->
+                  </div>
+                </div>
+
+                <!-- Adicionais Pagos (DER: ItensPedido_Adicionais) -->
+                <div class="form-field" style="margin-top: 12px;">
+                  <label class="form-label-sm">Turbinar com Adicionais (RN04-RN05):</label>
+                  <div class="checkbox-tags" id="pdvExtrasContainer">
+                    <!-- Checkboxes de adicionais -->
+                  </div>
+                </div>
+
+                <!-- Observação do Item -->
+                <div class="form-field" style="margin-top: 12px;">
+                  <label for="pdvItemNotes" class="form-label-sm">Observação do Item:</label>
+                  <input type="text" id="pdvItemNotes" class="input-control input-control--sm" placeholder="Ex: Bem passado, molho à parte">
+                </div>
+
+                <!-- Quantidade e Botão Incluir -->
+                <div class="customizer-footer-action">
+                  <div class="qty-control">
+                    <button type="button" class="qty-btn" id="pdvQtyMinus">-</button>
+                    <span class="qty-value" id="pdvQtyValue">1</span>
+                    <button type="button" class="qty-btn" id="pdvQtyPlus">+</button>
+                  </div>
+                  <button type="button" class="btn btn--primary btn--sm" id="btnIncludeItemInOrder">
+                    <span>Adicionar à Comanda</span>
+                    <span id="pdvItemCalculatedTotal">R$ 0,00</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resumo do Pedido / Cupom do PDV (UC01: calcular valores e apresentar resumo) -->
+            <div class="card pdv-box pdv-summary-card">
+              <div class="card-header-flex">
+                <h3 class="card-title">📋 Resumo do Pedido</h3>
+                <span class="badge badge--primary" id="pdvSummaryAttendanceType">Balcão</span>
+              </div>
+
+              <!-- Lista de Itens do Pedido -->
+              <div class="pdv-summary-items" id="pdvSummaryItemsList">
+                <p class="text-muted" style="text-align: center; padding: 20px 0;">Nenhum item adicionado ao pedido.</p>
+              </div>
+
+              <!-- Linha de Valores -->
+              <div class="pdv-summary-totals">
+                <div class="total-row">
+                  <span>Subtotal Itens:</span>
+                  <span id="pdvSummarySubtotal">R$ 0,00</span>
+                </div>
+                <div class="total-row">
+                  <span>Adicionais (RN04):</span>
+                  <span id="pdvSummaryExtras">R$ 0,00</span>
+                </div>
+                <div class="total-row total-row--grand">
+                  <strong>Total a Pagar:</strong>
+                  <strong id="pdvSummaryGrandTotal">R$ 0,00</strong>
+                </div>
+              </div>
+
+              <!-- Dados do Cliente e Pagamento no PDV -->
+              <div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed var(--color-line);">
+                <div class="form-field" style="margin-bottom: 10px;">
+                  <label for="pdvClientName" style="font-size: 0.85rem;">Nome do Cliente *</label>
+                  <input type="text" id="pdvClientName" class="input-control" placeholder="Ex: João Silva" value="Cliente Balcão">
+                </div>
+
+                <div class="form-field" style="margin-bottom: 12px;">
+                  <label for="pdvPaymentMethod" style="font-size: 0.85rem;">Forma de Pagamento *</label>
+                  <select id="pdvPaymentMethod" class="input-control">
+                    <option value="Pix">Pix (QR Code)</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                  </select>
+                </div>
+
+                <label class="tag-checkbox" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; margin-bottom: 12px; cursor: pointer;">
+                  <input type="checkbox" id="pdvSendWhatsApp" checked>
+                  <span>💬 Encaminhar pedido formatado no WhatsApp ao registrar</span>
+                </label>
+              </div>
+
+              <!-- Botão Confirmar Pedido (RNF07: prevenção de cliques repetidos) -->
+              <div class="pdv-submit-container">
+                <button type="button" class="btn btn--success btn--lg btn--block" id="btnConfirmAndRegisterOrder">
+                  <span>✅ Registrar Pedido (RECEBIDO)</span>
+                </button>
+                <div id="pdvErrorMessage" class="feedback-msg feedback-msg--error" style="display: none;"></div>
+                <div id="pdvSuccessMessage" class="feedback-msg feedback-msg--success" style="display: none;"></div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 3: MÓDULO COZINHA / KDS (UC02)
+         Ator: Cozinha Autenticada (RN09, RN10: RECEBIDO -> EM PREPARO -> PRONTO)
+         Alerta: Notificar Atendente quando ficar PRONTO
+         ======================================================================== -->
+    <section class="module-view" id="view-cozinha" aria-label="Painel KDS da Cozinha">
+      <div class="container">
+        
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">UC02 — Atualizar Status do Pedido</div>
+            <h2>🍳 Painel KDS da Cozinha (Ordem de Chegada)</h2>
+            <p>Gerenciamento da esteira de preparo em tempo real. Cada estágio atualiza o histórico e alerta o atendente.</p>
+          </div>
+          <div class="view-header__badge">
+            <span class="status-indicator status-indicator--cooking"></span>
+            <span>Cozinha em Operação</span>
+          </div>
+        </div>
+
+        <!-- Colunas Kanban da Cozinha -->
+        <div class="kds-kanban">
+          
+          <!-- Coluna 1: RECEBIDO -->
+          <div class="kds-column">
+            <div class="kds-column__header kds-column__header--received">
+              <h3>📥 Pedidos Recebidos</h3>
+              <span class="kds-count" id="kdsCountReceived">0</span>
+            </div>
+            <div class="kds-cards-list" id="kdsListReceived">
+              <!-- Cards de pedidos com status RECEBIDO -->
+            </div>
+          </div>
+
+          <!-- Coluna 2: EM PREPARO -->
+          <div class="kds-column">
+            <div class="kds-column__header kds-column__header--preparing">
+              <h3>🔥 Em Preparo na Chapa</h3>
+              <span class="kds-count" id="kdsCountPreparing">0</span>
+            </div>
+            <div class="kds-cards-list" id="kdsListPreparing">
+              <!-- Cards de pedidos com status EM PREPARO -->
+            </div>
+          </div>
+
+          <!-- Coluna 3: PRONTOS (Aguardando Retirada pelo Atendente) -->
+          <div class="kds-column">
+            <div class="kds-column__header kds-column__header--ready">
+              <h3>🔔 Prontos para Entrega</h3>
+              <span class="kds-count" id="kdsCountReady">0</span>
+            </div>
+            <div class="kds-cards-list" id="kdsListReady">
+              <!-- Cards de pedidos com status PRONTO -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 4: MÓDULO BALCÃO, CAIXA & FINALIZAÇÃO (UC03 & UC02)
+         Ator: Atendente Autenticado
+         Regras: RN09-RN12 (Só conclui pedido PRONTO e entregue), RN13 (Pagamento PAGO ou PENDENTE), RN11 (Cancelamento)
+         ======================================================================== -->
+    <section class="module-view" id="view-pedidos" aria-label="Gestão de Pedidos e Caixa">
+      <div class="container">
+        
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">UC03 — Finalizar Pedido & Gestão</div>
+            <h2>📦 Balcão, Entregas & Caixa</h2>
+            <p>Conferência de entrega, confirmação de recebimento (PAGO/PENDENTE), cancelamentos e auditoria.</p>
+          </div>
+          <div class="view-header__actions">
+            <!-- Filtros de Listagem -->
+            <div class="segmented-control" role="group" aria-label="Filtro de Pedidos">
+              <button class="seg-btn seg-btn--active" data-table-filter="todos">Todos</button>
+              <button class="seg-btn" data-table-filter="PRONTO">🔔 Prontos</button>
+              <button class="seg-btn" data-table-filter="EM_ANDAMENTO">⏳ Em Andamento</button>
+              <button class="seg-btn" data-table-filter="CONCLUÍDO">✅ Concluídos</button>
+              <button class="seg-btn" data-table-filter="CANCELADO">❌ Cancelados</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela Gerencial de Pedidos -->
+        <div class="card table-card">
+          <div class="table-responsive">
+            <table class="data-table" id="ordersDataTable">
+              <thead>
+                <tr>
+                  <th>Nº Pedido</th>
+                  <th>Data/Hora</th>
+                  <th>Modalidade</th>
+                  <th>Itens & Detalhes</th>
+                  <th>Total</th>
+                  <th>Preparo (UC02)</th>
+                  <th>Pagamento (UC03)</th>
+                  <th>Ações Operacionais</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody">
+                <!-- Linhas preenchidas dinamicamente via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 5: MÓDULO GERENCIAL / DASHBOARD & ADMIN (RF01, RF08, RF10)
+         Ator: Gerente Autenticado
+         ======================================================================== -->
+    <section class="module-view" id="view-gerente" aria-label="Painel Gerencial e Relatórios">
+      <div class="container">
+        
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">RF08 & RF01 — Relatórios & Administração</div>
+            <h2>📊 Painel Gerencial & Gestão de Cardápio</h2>
+            <p>Acompanhamento de vendas diárias, faturamento, ranking de produtos e controle de cardápio e estoque.</p>
+          </div>
+          <div class="view-header__actions">
+            <button type="button" class="btn btn--primary" id="btnOpenNewProductModal">
+              <span>+ Novo Produto (RF01)</span>
+            </button>
+            <button type="button" class="btn btn--secondary" id="btnOpenNewExtraModal">
+              <span>+ Novo Adicional (RF01)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Métricas / KPIs do Dia (RF08) -->
+        <div class="kpi-grid">
+          <div class="card kpi-card">
+            <div class="kpi-icon">💰</div>
+            <div>
+              <span class="kpi-label">Faturamento Total do Dia</span>
+              <strong class="kpi-value" id="kpiTotalRevenue">R$ 0,00</strong>
+            </div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-icon">✅</div>
+            <div>
+              <span class="kpi-label">Total Recebido (PAGO)</span>
+              <strong class="kpi-value text-success" id="kpiPaidRevenue">R$ 0,00</strong>
+            </div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-icon">⏳</div>
+            <div>
+              <span class="kpi-label">Valores Pendentes</span>
+              <strong class="kpi-value text-warning" id="kpiPendingRevenue">R$ 0,00</strong>
+            </div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-icon">📦</div>
+            <div>
+              <span class="kpi-label">Pedidos Registrados</span>
+              <strong class="kpi-value" id="kpiOrdersCount">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid de Relatório de Mais Vendidos & Gestão do Cardápio -->
+        <div class="gerente-layout" style="margin-top: 24px;">
+          
+          <!-- Ranking de Produtos Mais Vendidos por Dia (RF08) -->
+          <div class="card">
+            <h3 class="card-title">🏆 Produtos Mais Vendidos do Dia (RF08)</h3>
+            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 16px;">Ranking atualizado automaticamente a cada pedido registrado.</p>
+            <div id="rankingTopProductsList" class="ranking-list">
+              <!-- Renderizado dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Gestão de Produtos do Cardápio & Estoque (RF01, RF10) -->
+          <div class="card">
+            <div class="card-header-flex">
+              <h3 class="card-title">🍔 Cardápio & Estoque (RF01, RF10)</h3>
+              <span class="text-muted" style="font-size: 0.85rem;">Editar preço e ativar/desativar</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table data-table--compact">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Categoria</th>
+                    <th>Preço (RN06)</th>
+                    <th>Estoque</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="managerProductsTableBody">
+                  <!-- Linhas renderizadas via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Tabela de Adicionais Cadastrados (RF01) -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header-flex">
+            <h3 class="card-title">🧀 Adicionais Disponíveis (RF01)</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table data-table--compact">
+              <thead>
+                <tr>
+                  <th>Nome do Adicional</th>
+                  <th>Preço Cobrado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="managerExtrasTableBody">
+                <!-- Linhas de adicionais -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODAL 1: FINALIZAR PEDIDO (UC03)
+       Regras: Atendente confere informações, confirma entrega (RN12), define PAGO/PENDENTE (RN13)
+       ========================================================================== -->
+  <div class="modal-overlay" id="finalizeOrderModal" role="dialog" aria-modal="true" aria-labelledby="finalizeModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="finalizeModalTitle">Finalizar Pedido ao Cliente (UC03)</h3>
+        <button type="button" class="modal-close" id="closeFinalizeModalBtn" aria-label="Fechar Modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="order-summary-box" id="finalizeOrderDetails">
+          <!-- Detalhes do pedido carregados dinamicamente -->
+        </div>
+
+        <!-- Conferência de Entrega (RN09-RN12: Só concluir pedido PRONTO e entregue) -->
+        <div class="form-field" style="margin-top: 18px;">
+          <label class="checkbox-item checkbox-item--highlight">
+            <input type="checkbox" id="checkConfirmDelivery">
+            <span><strong>Confirmo que o pedido foi devidamente entregue ao cliente</strong> (RN12)</span>
+          </label>
+        </div>
+
+        <!-- Registro de Pagamento (RN13: PAGO ou PENDENTE não impede a conclusão) -->
+        <div class="form-field" style="margin-top: 16px;">
+          <label for="selectPaymentStatus" class="form-label-sm">Situação do Pagamento:</label>
+          <select id="selectPaymentStatus" class="input-control">
+            <option value="PAGO">💰 PAGO (Dinheiro, Pix ou Cartão)</option>
+            <option value="PENDENTE">⏳ PENDENTE (Pagar na saída / Comanda aberta)</option>
+          </select>
+          <small class="text-muted">Conforme RN13, pagamento PENDENTE permite concluir a entrega e ser registrado depois.</small>
+        </div>
+
+        <div id="finalizeModalError" class="feedback-msg feedback-msg--error" style="display: none; margin-top: 12px;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn--secondary" id="btnCancelFinalizeModal">Voltar</button>
+        <button type="button" class="btn btn--success" id="btnSubmitFinalizeOrder">
+          <span>Concluir Pedido (CONCLUÍDO)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: CANCELAR PEDIDO (UC02 - RN11)
+       Regra: Atendente pode cancelar RECEBIDO, EM PREPARO ou PRONTO. CONCLUÍDO e CANCELADO não mudam.
+       ========================================================================== -->
+  <div class="modal-overlay" id="cancelOrderModal" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+    <div class="modal-card modal-card--danger">
+      <div class="modal-header">
+        <h3 id="cancelModalTitle">Solicitar Cancelamento de Pedido</h3>
+        <button type="button" class="modal-close" id="closeCancelModalBtn" aria-label="Fechar Modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p>Atenção: Apenas o <strong>Atendente</strong> pode solicitar o cancelamento de pedidos ativos (RN11).</p>
+        <div class="order-summary-box" id="cancelOrderDetails">
+          <!-- Detalhes do pedido a cancelar -->
+        </div>
+
+        <div class="form-field" style="margin-top: 14px;">
+          <label for="inputCancelReason">Motivo do Cancelamento *:</label>
+          <input type="text" id="inputCancelReason" class="input-control" placeholder="Ex: Desistência do cliente, erro na comanda...">
+        </div>
+
+        <div id="cancelModalError" class="feedback-msg feedback-msg--error" style="display: none; margin-top: 10px;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn--secondary" id="btnDismissCancelModal">Voltar</button>
+        <button type="button" class="btn btn--primary" id="btnSubmitCancelOrder" style="background-color: #C03E21;">
+          <span>Confirmar Cancelamento (CANCELADO)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: AUDITORIA & HISTÓRICO DE STATUS (Diagrama de Classes: HistoricoStatus)
+       DER: HistoricoPedidos (IdHistorico, IdPedido, IdFuncionario, SituacaoAnterior, SituacaoNova, DataHoraMudanca)
+       ========================================================================== -->
+  <div class="modal-overlay" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <div class="modal-card modal-card--wide">
+      <div class="modal-header">
+        <h3 id="historyModalTitle">📜 Histórico de Auditoria do Pedido</h3>
+        <button type="button" class="modal-close" id="closeHistoryModalBtn" aria-label="Fechar Modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="history-order-meta" id="historyOrderMeta">
+          <!-- Metadados do pedido -->
+        </div>
+
+        <div class="table-responsive" style="margin-top: 15px;">
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th>Data / Hora</th>
+                <th>Situação Anterior</th>
+                <th>Situação Nova</th>
+                <th>Responsável (Cargo)</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- Histórico renderizado via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn--secondary" id="btnCloseHistoryModal">Fechar Auditoria</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4: CUSTOMIZADOR RÁPIDO DO CARDÁPIO ONLINE (VISÃO VITRINE)
+       ========================================================================== -->
+  <div class="modal-overlay" id="customizerModal" role="dialog" aria-modal="true" aria-labelledby="modalProductTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalProductTitle">Personalizar Lanche</h3>
+        <button type="button" class="modal-close" id="closeModalBtn" aria-label="Fechar Modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p id="modalProductDesc" class="text-muted" style="font-size: 0.9rem; margin-bottom: 20px;"></p>
+        <div id="modalOptionsContainer"></div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="qty-control">
+          <button type="button" class="qty-btn" id="qtyMinus">-</button>
+          <span class="qty-value" id="qtyValue">1</span>
+          <button type="button" class="qty-btn" id="qtyPlus">+</button>
+        </div>
+
+        <button type="button" class="btn btn--primary" id="addToCartModalBtn">
+          <span>Adicionar</span>
+          <span id="modalTotalPrice">R$ 0,00</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       CARRINHO LATERAL DO CLIENTE ONLINE
+       ========================================================================== -->
+  <aside class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-label="Carrinho de Compras">
+    <div class="modal-header">
+      <h3>🛒 Seu Pedido Online</h3>
+      <button type="button" class="modal-close" id="closeCartBtn" aria-label="Fechar Carrinho">✕</button>
+    </div>
+
+    <div class="cart-body">
+      <div id="cartItemsList"></div>
+
+      <div style="margin-top: 25px; border-top: 1px dashed var(--color-line); padding-top: 15px;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--color-primary);">👤 Identificação do Cliente (Simulação)</h4>
+
+        <div class="form-field">
+          <label for="checkoutName">Nome Completo *</label>
+          <input type="text" id="checkoutName" class="input-control" placeholder="Ex: Lucas Silva" value="Lucas Silva">
+        </div>
+
+        <div class="form-field">
+          <label for="checkoutCpf">CPF *</label>
+          <input type="text" id="checkoutCpf" class="input-control" placeholder="000.000.000-00" value="111.222.333-44">
+        </div>
+
+        <div class="form-field">
+          <label for="checkoutPassword">Senha de Confirmação</label>
+          <input type="password" id="checkoutPassword" class="input-control" placeholder="******" value="123456">
+        </div>
+
+        <div class="form-field">
+          <label for="checkoutOrderType">Tipo de Atendimento</label>
+          <select id="checkoutOrderType" class="input-control">
+            <option value="Balcão / Retirada">Retirar no Balcão (Quiosque)</option>
+            <option value="Mesa">Consumir na Mesa</option>
+            <option value="Delivery">Entrega em Casa (Delivery)</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="checkoutPayment">Forma de Pagamento</label>
+          <select id="checkoutPayment" class="input-control">
+            <option value="Pix">Pix (Chave gerada na hora)</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="cart-footer">
+      <div class="cart-total-row">
+        <span>Total a Pagar:</span>
+        <strong id="cartTotalAmount">R$ 0,00</strong>
+      </div>
+
+      <button type="button" class="btn btn--success btn--lg" id="btnConfirmClientOrder" style="width: 100%; margin-bottom: 8px;">
+        <span>✅ Finalizar Pedido (Gravar no LocalStorage)</span>
+      </button>
+
+      <button type="button" class="btn btn--whatsapp" id="checkoutWhatsAppBtn" style="width: 100%;">
+        <span>💬 Encaminhar Pedido ao WhatsApp</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       MODAL 5: CADASTRAR / EDITAR PRODUTO (RF01, RF10 - GERENTE)
+       ========================================================================== -->
+  <div class="modal-overlay" id="productFormModal" role="dialog" aria-modal="true" aria-labelledby="productFormModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="productFormModalTitle">Cadastrar Novo Produto (RF01)</h3>
+        <button type="button" class="modal-close" id="closeProductFormModalBtn" aria-label="Fechar Modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="inputProductId">
+        
+        <div class="form-field">
+          <label for="inputProductName">Nome do Produto *</label>
+          <input type="text" id="inputProductName" class="input-control" placeholder="Ex: Hot Dog Picanha Especial">
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="selectProductCategory">Categoria *</label>
+            <select id="selectProductCategory" class="input-control">
+              <option value="favoritos">Mais Pedidos (favoritos)</option>
+              <option value="gourmet">Gourmet Especial (gourmet)</option>
+              <option value="combos">Combos da Galera (combos)</option>
+              <option value="acompanhamentos">Porções & Bebidas (acompanhamentos)</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="inputProductPrice">Preço (R$) * (RN06)</label>
+            <input type="number" id="inputProductPrice" class="input-control" step="0.50" min="0" placeholder="Ex: 22.00">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="inputProductStock">Estoque Inicial *</label>
+            <input type="number" id="inputProductStock" class="input-control" min="0" placeholder="Ex: 30" value="30">
+          </div>
+
+          <div class="form-field">
+            <label for="inputProductTag">Tag / Destaque</label>
+            <input type="text" id="inputProductTag" class="input-control" placeholder="Ex: Novidade 🔥" value="Especial ✨">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="inputProductDesc">Descrição do Lanche</label>
+          <textarea id="inputProductDesc" class="input-control" rows="2" placeholder="Descreva os ingredientes principais e modo de preparo..."></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="inputProductIngredients">Ingredientes Padrão (separados por vírgula)</label>
+          <input type="text" id="inputProductIngredients" class="input-control" placeholder="Ex: Salsicha Bovina, Molho Especial, Batata Palha, Queijo">
+        </div>
+
+        <div class="form-field">
+          <label for="inputProductImage">URL da Imagem</label>
+          <input type="url" id="inputProductImage" class="input-control" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=800&q=80">
+        </div>
+
+        <div id="productFormError" class="feedback-msg feedback-msg--error" style="display: none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn--secondary" id="btnCancelProductForm">Cancelar</button>
+        <button type="button" class="btn btn--primary" id="btnSaveProductForm">
+          <span>Salvar Produto</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 6: CADASTRAR / EDITAR ADICIONAL (RF01 - GERENTE)
+       ========================================================================== -->
+  <div class="modal-overlay" id="extraFormModal" role="dialog" aria-modal="true" aria-labelledby="extraFormModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="extraFormModalTitle">Cadastrar Novo Adicional (RF01)</h3>
+        <button type="button" class="modal-close" id="closeExtraFormModalBtn" aria-label="Fechar Modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="inputExtraId">
+        
+        <div class="form-field">
+          <label for="inputExtraName">Nome do Adicional *</label>
+          <input type="text" id="inputExtraName" class="input-control" placeholder="Ex: Queijo Gouda Maçaricado">
+        </div>
+
+        <div class="form-field">
+          <label for="inputExtraPrice">Preço Cobrado (R$) *</label>
+          <input type="number" id="inputExtraPrice" class="input-control" step="0.50" min="0" placeholder="Ex: 5.00">
+        </div>
+
+        <div id="extraFormError" class="feedback-msg feedback-msg--error" style="display: none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn--secondary" id="btnCancelExtraForm">Cancelar</button>
+        <button type="button" class="btn btn--primary" id="btnSaveExtraForm">
+          <span>Salvar Adicional</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       CONTAINER DE TOAST / NOTIFICAÇÕES EM TEMPO REAL
+       ========================================================================== -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- JavaScript Principal do Sistema -->
+  <script src="js/script.js"></script>
+</body>
+</html>
